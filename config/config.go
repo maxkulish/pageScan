@@ -9,6 +9,7 @@ import (
 type Page struct {
 	ID, RespCode                int
 	URL, Title, H1, Description string
+	LoadTime                    float64
 }
 
 func SetEnvironment() {

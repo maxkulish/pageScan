@@ -1,6 +1,11 @@
 package database
 
-import "log"
+import (
+	"fmt"
+	"log"
+
+	"github.com/maxkulish/pageScan/config"
+)
 
 func RetrieveSitemapPages(sitemap_id int) map[int]string {
 
@@ -29,4 +34,21 @@ func RetrieveSitemapPages(sitemap_id int) map[int]string {
 	}
 
 	return pages
+}
+
+func BulkSavePagesResponse(pages []config.Page) bool {
+
+	conn := Connection()
+	defer conn.Close()
+
+	rowQuery := ""
+
+	for _, page := range pages {
+		rowQuery += fmt.Sprintf("UPDATE sitemap_pages SET http_response=%d, "+
+			"load_time=%f WHERE id = %d;", page.RespCode, page.LoadTime, page.ID)
+	}
+
+	conn.Exec(rowQuery)
+
+	return true
 }

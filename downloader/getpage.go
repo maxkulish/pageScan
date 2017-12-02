@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 
@@ -40,14 +41,14 @@ func GetPageHtml(url string) (string, error) {
 
 func GetPageResponse(url string) int {
 
-	timeout := time.Duration(10 * time.Second)
+	timeout := time.Duration(20 * time.Second)
 	client := &http.Client{
 		Timeout: timeout,
 	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		//log.Println("[!] Failed to crawl ", url)
+		log.Println("[!] Failed to crawl ", url)
 		return 0
 	}
 
@@ -55,7 +56,7 @@ func GetPageResponse(url string) int {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		//log.Println("[!] Failed to crawl ", url)
+		log.Println("[!] Failed to crawl ", url)
 		return 0
 	}
 

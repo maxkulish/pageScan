@@ -1,10 +1,12 @@
 package downloader
 
 import (
+	"time"
+
 	"github.com/maxkulish/pageScan/config"
 )
 
-func CheckPageResponseChunk(chunk []config.Page) {
+func CheckPageResponseChunk(chunk []config.Page) []config.Page {
 
 	chPages := make(chan config.Page)
 	chFinished := make(chan bool)
@@ -23,6 +25,8 @@ func CheckPageResponseChunk(chunk []config.Page) {
 			c++
 		}
 	}
+
+	return results
 }
 
 func checkPageResponse(page config.Page, ch chan config.Page, chFinished chan bool) error {
@@ -31,7 +35,11 @@ func checkPageResponse(page config.Page, ch chan config.Page, chFinished chan bo
 		chFinished <- true
 	}()
 
+	start := time.Now()
 	page.RespCode = GetPageResponse(page.URL)
+
+	duration := time.Since(start)
+	page.LoadTime = duration.Seconds()
 
 	ch <- page
 

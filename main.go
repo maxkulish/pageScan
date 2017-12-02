@@ -7,6 +7,7 @@ import (
 
 	"github.com/maxkulish/pageScan/config"
 	"github.com/maxkulish/pageScan/database"
+	"github.com/maxkulish/pageScan/downloader"
 	"github.com/maxkulish/pageScan/utils"
 )
 
@@ -26,7 +27,7 @@ func main() {
 
 func checkResponseAllPages() {
 
-	sitemaps := database.RetrieveSitemapLinksByID(4)
+	sitemaps := database.RetrieveSitemapLinksByID(2)
 	fmt.Println(sitemaps)
 
 	pagesToCheck := []config.Page{}
@@ -42,9 +43,16 @@ func checkResponseAllPages() {
 		}
 	}
 
-	res := utils.ChunkifyPages(pagesToCheck, 10)
+	chunks := utils.ChunkifyPages(pagesToCheck, 50)
 
-	fmt.Println(len(res))
-	//fmt.Printf("Code: %d. Page: %s\n", downloader.GetPageResponse(url), url)
+	for _, chunk := range chunks {
+		results := downloader.CheckPageResponseChunk(chunk)
+
+		for _, page := range results {
+			fmt.Printf("Code: %d. URL: %s, LoadTime: %f\n", page.RespCode, page.URL, page.LoadTime)
+		}
+
+		database.BulkSavePagesResponse(results)
+	}
 
 }
