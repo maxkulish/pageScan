@@ -1,2 +1,5 @@
-package pageCrawler
+package main
 
+func main()  {
+	print("hello")
+}
