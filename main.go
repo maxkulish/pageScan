@@ -1,8 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/maxkulish/pageScan/config"
@@ -13,21 +16,44 @@ import (
 
 func main() {
 
+	if len(os.Args) == 1 || os.Args[1] == "-h" || os.Args[1] == "--help" {
+		fmt.Printf("Example: ./%s -resp -speed=15\n", filepath.Base(os.Args[0]))
+		os.Exit(1)
+	}
+
+	var speed int
+	flag.IntVar(
+		&speed,
+		"speed",
+		15,
+		"Scan speed. Example: ./pageScanLinux -speed=15")
+
+	pageResp := flag.Bool("resp", false, "Check pages response")
+	sitemapId := flag.Int("sitemap", 0, "Check by sitemap ID")
+
+	flag.Parse()
+
 	globalStart := time.Now()
-	log.Printf("\033[92m[+] Global start: %s\033[0m", globalStart)
+	log.Printf("\033[92m[+] Global start: %s\033[0m\n", globalStart)
 
 	// export environment variables from .env
 	config.SetEnvironment()
 
-	checkResponseAllPages()
+	if *sitemapId != 0 {
+		checkResponseForSitemap(speed, *sitemapId)
+	}
 
-	log.Printf("\033[92m[+] Done! Spent %s\033[0m", time.Since(globalStart))
+	if *pageResp == true {
+		checkResponseUncheckedPages(speed)
+	}
+
+	log.Printf("\033[92m[+] Done! Spent %s\033[0m\n", time.Since(globalStart))
 
 }
 
-func checkResponseAllPages() {
+func checkResponseForSitemap(chunkSize, sitemapId int) {
 
-	sitemaps := database.RetrieveSitemapLinksByID(2)
+	sitemaps := database.RetrieveSitemapLinksByID(sitemapId)
 	fmt.Println(sitemaps)
 
 	pagesToCheck := []config.Page{}
@@ -43,13 +69,38 @@ func checkResponseAllPages() {
 		}
 	}
 
-	chunks := utils.ChunkifyPages(pagesToCheck, 50)
+	chunks := utils.ChunkifyPages(pagesToCheck, chunkSize)
 
 	for _, chunk := range chunks {
 		results := downloader.CheckPageResponseChunk(chunk)
 
 		for _, page := range results {
-			fmt.Printf("Code: %d. URL: %s, LoadTime: %f\n", page.RespCode, page.URL, page.LoadTime)
+			fmt.Printf("Code: %d. LoadTime: %f URL: %s\n", page.RespCode, page.LoadTime, page.URL)
+		}
+
+		database.BulkSavePagesResponse(results)
+	}
+
+}
+
+func checkResponseUncheckedPages(chunkSize int) {
+
+	pages := database.RetrieveUncheckedPages()
+
+	if len(pages) == 0 {
+		log.Println("There are no pages to check")
+		os.Exit(1)
+	}
+
+	pagesToCheck := database.PagesToStruct(pages)
+
+	chunks := utils.ChunkifyPages(pagesToCheck, chunkSize)
+
+	for _, chunk := range chunks {
+		results := downloader.CheckPageResponseChunk(chunk)
+
+		for _, page := range results {
+			fmt.Printf("Code: %d. LoadTime: %f\tURL: %s\n", page.RespCode, page.LoadTime, page.URL)
 		}
 
 		database.BulkSavePagesResponse(results)

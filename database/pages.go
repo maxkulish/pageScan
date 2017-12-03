@@ -36,6 +36,33 @@ func RetrieveSitemapPages(sitemap_id int) map[int]string {
 	return pages
 }
 
+func RetrieveUncheckedPages() map[int]string {
+	conn := Connection()
+	defer conn.Close()
+
+	rows, err := conn.Query(`SELECT id, page_url
+		FROM sitemap_pages
+		WHERE load_time is NULL OR http_response = 0;`)
+	if err != nil {
+		log.Fatalf("Error: %s", err)
+	}
+
+	pages := make(map[int]string)
+
+	for rows.Next() {
+		var pageID int
+		var URL string
+
+		if err := rows.Scan(&pageID, &URL); err != nil {
+			log.Println("Can't read data from DB. Error: ", err)
+		}
+
+		pages[pageID] = URL
+	}
+
+	return pages
+}
+
 func BulkSavePagesResponse(pages []config.Page) bool {
 
 	conn := Connection()
@@ -51,4 +78,18 @@ func BulkSavePagesResponse(pages []config.Page) bool {
 	conn.Exec(rowQuery)
 
 	return true
+}
+
+func PagesToStruct(pages map[int]string) []config.Page {
+
+	result := []config.Page{}
+
+	for pageID, url := range pages {
+		result = append(result, config.Page{
+			ID:  pageID,
+			URL: url,
+		})
+	}
+
+	return result
 }

@@ -41,7 +41,7 @@ func GetPageHtml(url string) (string, error) {
 
 func GetPageResponse(url string) int {
 
-	timeout := time.Duration(20 * time.Second)
+	timeout := time.Duration(40 * time.Second)
 	client := &http.Client{
 		Timeout: timeout,
 	}
