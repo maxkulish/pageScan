@@ -2,6 +2,8 @@ package config
 
 import (
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 )
@@ -14,8 +16,11 @@ type Page struct {
 
 func SetEnvironment() {
 
-	err := godotenv.Load(".env")
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+
+	err = godotenv.Load(dir + "/" + ".env")
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Printf("Error loading .env file from dir: %s", dir)
+
 	}
 }

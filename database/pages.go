@@ -70,19 +70,33 @@ func BulkSavePagesResponse(pages []config.Page) bool {
 	defer conn.Close()
 
 	rowQuery := ""
-
-	dateTime := time.Now().UTC().Format(time.RFC3339)
+	var idList = make([]int, 0, len(pages))
 
 	for _, page := range pages {
-		rowQuery += fmt.Sprintf(
+
+		query := fmt.Sprintf(
 			"UPDATE sitemap_pages SET http_response=%d, "+
-				"load_time=%f, updated=%s WHERE id = %d;",
-			page.RespCode, dateTime, page.LoadTime, page.ID)
+				"load_time=%f WHERE id = %d;",
+			page.RespCode, page.LoadTime, page.ID)
+
+		rowQuery += query
+		idList = append(idList, page.ID)
 	}
 
 	conn.Exec(rowQuery)
+	UpdatePageTime(idList)
 
 	return true
+}
+
+func UpdatePageTime(idList []int) {
+	conn := Connection()
+	defer conn.Close()
+
+	for _, pageId := range idList {
+		conn.Exec("UPDATE sitemap_pages SET updated=$1 WHERE id = $2", time.Now(), pageId)
+	}
+
 }
 
 func PagesToStruct(pages map[int]string) []config.Page {
