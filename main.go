@@ -54,7 +54,7 @@ func main() {
 func checkResponseForSitemap(chunkSize, sitemapId int) {
 
 	sitemaps := database.RetrieveSitemapLinksByID(sitemapId)
-	fmt.Println(sitemaps)
+	log.Println("Get %d sitemaps to check Response Code", len(sitemaps))
 
 	pagesToCheck := []config.Page{}
 	for stmpId, _ := range sitemaps {
@@ -75,7 +75,7 @@ func checkResponseForSitemap(chunkSize, sitemapId int) {
 		results := downloader.CheckPageResponseChunk(chunk)
 
 		for _, page := range results {
-			fmt.Printf("Code: %d. LoadTime: %f URL: %s\n", page.RespCode, page.LoadTime, page.URL)
+			log.Printf("Code: %d. LoadTime: %f URL: %s\n", page.RespCode, page.LoadTime, page.URL)
 		}
 
 		database.BulkSavePagesResponse(results)
@@ -100,7 +100,7 @@ func checkResponseUncheckedPages(chunkSize int) {
 		results := downloader.CheckPageResponseChunk(chunk)
 
 		for _, page := range results {
-			fmt.Printf("Code: %d. LoadTime: %f\tURL: %s\n", page.RespCode, page.LoadTime, page.URL)
+			log.Printf("Code: %d. LoadTime: %f\tURL: %s\n", page.RespCode, page.LoadTime, page.URL)
 		}
 
 		database.BulkSavePagesResponse(results)

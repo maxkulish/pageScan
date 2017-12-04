@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/maxkulish/pageScan/config"
 )
@@ -70,9 +71,13 @@ func BulkSavePagesResponse(pages []config.Page) bool {
 
 	rowQuery := ""
 
+	dateTime := time.Now().UTC().Format(time.RFC3339)
+
 	for _, page := range pages {
-		rowQuery += fmt.Sprintf("UPDATE sitemap_pages SET http_response=%d, "+
-			"load_time=%f WHERE id = %d;", page.RespCode, page.LoadTime, page.ID)
+		rowQuery += fmt.Sprintf(
+			"UPDATE sitemap_pages SET http_response=%d, "+
+				"load_time=%f, updated=%s WHERE id = %d;",
+			page.RespCode, dateTime, page.LoadTime, page.ID)
 	}
 
 	conn.Exec(rowQuery)
