@@ -54,7 +54,7 @@ func main() {
 func checkResponseForSitemap(chunkSize, sitemapId int) {
 
 	sitemaps := database.RetrieveSitemapLinksByID(sitemapId)
-	log.Println("Get %d sitemaps to check Response Code", len(sitemaps))
+	log.Printf("Get %d sitemaps to check Response Code\n", len(sitemaps))
 
 	pagesToCheck := []config.Page{}
 	for stmpId, _ := range sitemaps {
