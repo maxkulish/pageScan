@@ -41,9 +41,10 @@ func RetrieveUncheckedPages() map[int]string {
 	conn := Connection()
 	defer conn.Close()
 
-	rows, err := conn.Query(`SELECT id, page_url
-		FROM sitemap_pages
-		WHERE load_time is NULL OR http_response = 0;`)
+	rows, err := conn.Query(`
+		SELECT id, page_url
+			FROM sitemap_pages
+			WHERE load_time = 0.0 OR http_response = 0;`)
 	if err != nil {
 		log.Fatalf("Error: %s", err)
 	}
