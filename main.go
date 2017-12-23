@@ -30,6 +30,7 @@ func main() {
 
 	pageResp := flag.Bool("resp", false, "Check pages response")
 	sitemapId := flag.Int("sitemap", 0, "Check by sitemap ID")
+	content := flag.Bool("content", false, "Download Title, H1, Description")
 
 	flag.Parse()
 
@@ -45,6 +46,11 @@ func main() {
 
 	if *pageResp == true {
 		checkResponseUncheckedPages(speed)
+	}
+
+	if *content == true {
+		page := "https://dissertify.com/write-my-dissertation"
+		downloader.DownloadPageContent(page)
 	}
 
 	log.Printf("\033[92m[+] Done! Spent %s\033[0m\n", time.Since(globalStart))

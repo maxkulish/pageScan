@@ -10,14 +10,14 @@ import (
 )
 
 func GetPageHtml(url string) (string, error) {
-	timeout := time.Duration(20 * time.Second)
+	timeout := time.Duration(40 * time.Second)
 	client := &http.Client{
 		Timeout: timeout,
 	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		//log.Println("[!] Failed to crawl ", url)
+		log.Println("[!] Failed to crawl ", url)
 		return "error", err
 	}
 
@@ -25,14 +25,14 @@ func GetPageHtml(url string) (string, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		//log.Println("[!] Failed to crawl ", url)
+		log.Println("[!] Failed to crawl ", url)
 		return "error", err
 	}
 	defer resp.Body.Close()
 
 	httpText, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		//log.Println("[!] Failed to read server response ", url)
+		log.Println("[!] Failed to read server response ", url)
 		return "error", err
 	}
 
