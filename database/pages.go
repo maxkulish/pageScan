@@ -90,6 +90,31 @@ func BulkSavePagesResponse(pages []config.Page) bool {
 	return true
 }
 
+func BulkSavePagesContent(pages []config.Page) bool {
+
+	conn := Connection()
+	defer conn.Close()
+
+	rowQuery := ""
+	var idList = make([]int, 0, len(pages))
+
+	for _, page := range pages {
+
+		query := fmt.Sprintf(
+			"UPDATE sitemap_pages SET title=%s, "+
+				"h1=%s, description=%s WHERE id = %d;",
+			page.Title, page.H1, page.Description, page.ID)
+
+		rowQuery += query
+		idList = append(idList, page.ID)
+	}
+
+	conn.Exec(rowQuery)
+	UpdatePageTime(idList)
+
+	return true
+}
+
 func UpdatePageTime(idList []int) {
 	conn := Connection()
 	defer conn.Close()

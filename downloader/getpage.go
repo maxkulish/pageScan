@@ -1,15 +1,15 @@
 package downloader
 
 import (
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/maxkulish/pageScan/agent"
+	"golang.org/x/net/html"
 )
 
-func GetPageHtml(url string) (string, error) {
+func GetParsedHTML(url string) (*html.Node, error) {
 	timeout := time.Duration(40 * time.Second)
 	client := &http.Client{
 		Timeout: timeout,
@@ -18,7 +18,7 @@ func GetPageHtml(url string) (string, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Println("[!] Failed to crawl ", url)
-		return "error", err
+		return nil, err
 	}
 
 	req.Header.Set("User-Agent", agent.GetUserAgent())
@@ -26,17 +26,17 @@ func GetPageHtml(url string) (string, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("[!] Failed to crawl ", url)
-		return "error", err
+		return nil, err
 	}
+
 	defer resp.Body.Close()
 
-	httpText, err := ioutil.ReadAll(resp.Body)
+	root, err := html.Parse(resp.Body)
 	if err != nil {
-		log.Println("[!] Failed to read server response ", url)
-		return "error", err
+		panic(err)
 	}
 
-	return string(httpText), error(nil)
+	return root, error(nil)
 }
 
 func GetPageResponse(url string) int {

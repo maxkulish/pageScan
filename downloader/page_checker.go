@@ -1,12 +1,14 @@
 package downloader
 
 import (
-	"fmt"
-	"log"
-	"regexp"
 	"time"
 
+	"strings"
+
 	"github.com/maxkulish/pageScan/config"
+	"github.com/yhat/scrape"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
 func CheckPageResponseChunk(chunk []config.Page) []config.Page {
@@ -49,78 +51,41 @@ func checkPageResponse(page config.Page, ch chan config.Page, chFinished chan bo
 	return error(nil)
 }
 
-func ExtractTitle(html string) []string {
-	var titlePattern = regexp.MustCompile(`.*?<title[\sitemprop="name"\s]*?>(.*?)</title>`)
+func ExtractTitle(htmlBody *html.Node) string {
 
-	title := titlePattern.FindStringSubmatch(html)
+	// Search for the title
+	title, ok := scrape.Find(htmlBody, scrape.ByTag(atom.Title))
+	if ok {
+		return strings.TrimSpace(scrape.Text(title))
+	}
 
-	return title
+	return "not found"
 
 }
 
-func ExtractHeaderOne(html string) []string {
-	var headerOnePatt = regexp.MustCompile(`.*?<h1.*?>(.+?)</h1>`)
+func ExtractHeaderOne(htmlBody *html.Node) string {
 
-	header := headerOnePatt.FindStringSubmatch(html)
+	h1, ok := scrape.Find(htmlBody, scrape.ByTag(atom.H1))
 
-	return header
+	if ok {
+		return strings.TrimSpace(scrape.Text(h1))
+	}
+
+	return "not found"
 }
 
-func ExtractDescription(html string) []string {
-	var descrPattOne = regexp.MustCompile(`.*?<meta.*?name="description".*?content="(.+?)">`)
+func ExtractDescription(htmlBody *html.Node) string {
 
-	descr := descrPattOne.FindStringSubmatch(html)
+	descr := scrape.FindAll(htmlBody, scrape.ByTag(atom.Meta))
 
-	if len(descr) == 0 {
-		var descrPattTwo = regexp.MustCompile(`.*?<meta.*?content="(.+?)".*?name="description">`)
-		descr = descrPattTwo.FindStringSubmatch(html)
+	for _, meta := range descr {
+		res := scrape.Attr(meta, "name") == "description"
+
+		if res {
+			found := scrape.Attr(meta, "content")
+			return strings.TrimSpace(found)
+		}
 	}
 
-	return descr
-}
-
-func DownloadPageContent(pageURL string) {
-
-	pageHTML, err := GetPageHtml(pageURL)
-
-	if err != nil {
-		log.Printf("[!] I can't find Title on page: %s\n", pageURL)
-	}
-
-	title := ExtractTitle(pageHTML)
-
-	if len(title) == 0 {
-		log.Println("<title> not found")
-		fmt.Println(title)
-	} else if len(title) > 2 {
-		log.Printf("Found several <title> tags: %v", title)
-		fmt.Println(title)
-	} else {
-		fmt.Println(title[len(title)-1])
-	}
-
-	header := ExtractHeaderOne(pageHTML)
-
-	if len(header) == 0 {
-		log.Println("<h1> not found")
-		fmt.Println(header)
-	} else if len(header) > 2 {
-		log.Printf("Found several <h1> tags: %v", header)
-		fmt.Println(header)
-	} else {
-		fmt.Println(header[len(header)-1])
-	}
-
-	description := ExtractDescription(pageHTML)
-
-	if len(description) == 0 {
-		log.Println("<meta name='description'> not found")
-		fmt.Println(description)
-	} else if len(description) > 2 {
-		log.Printf("Found several <meta name='description'> tags: %v", header)
-		fmt.Println(description)
-	} else {
-		fmt.Println(description[len(description)-1])
-	}
-
+	return "not found"
 }

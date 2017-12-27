@@ -30,7 +30,7 @@ func main() {
 
 	pageResp := flag.Bool("resp", false, "Check pages response")
 	sitemapId := flag.Int("sitemap", 0, "Check by sitemap ID")
-	content := flag.Bool("content", false, "Download Title, H1, Description")
+	content := flag.Bool("content", false, "Download page title, h1, description")
 
 	flag.Parse()
 
@@ -49,8 +49,8 @@ func main() {
 	}
 
 	if *content == true {
-		page := "https://dissertify.com/write-my-dissertation"
-		downloader.DownloadPageContent(page)
+		url := "https://scoobydomyessay.com/blog/prevention-of-cyber-bullying/"
+		downloadPageContent(url, speed)
 	}
 
 	log.Printf("\033[92m[+] Done! Spent %s\033[0m\n", time.Since(globalStart))
@@ -111,5 +111,22 @@ func checkResponseUncheckedPages(chunkSize int) {
 
 		database.BulkSavePagesResponse(results)
 	}
+}
+
+func downloadPageContent(url string, speed int) {
+
+	page, err := downloader.GetParsedHTML(url)
+	if err != nil {
+		log.Printf("I can't donwload page HTML. URL: %s", url)
+	}
+
+	title := downloader.ExtractTitle(page)
+	fmt.Println(title)
+
+	h1 := downloader.ExtractHeaderOne(page)
+	fmt.Println(h1)
+
+	descr := downloader.ExtractDescription(page)
+	fmt.Println(descr)
 
 }
