@@ -65,6 +65,37 @@ func RetrieveUncheckedPages() map[int]string {
 	return pages
 }
 
+func RetrievePagesWithoutContent() map[int]string {
+
+	conn := Connection()
+	defer conn.Close()
+
+	rows, err := conn.Query(`
+		SELECT id, page_url
+			FROM sitemap_pages
+			WHERE
+			title IS NULL OR h1 IS NULL
+			OR description IS NULL OR description = 'not found';`)
+	if err != nil {
+		log.Fatalf("Error: %s", err)
+	}
+
+	pages := make(map[int]string)
+
+	for rows.Next() {
+		var pageID int
+		var URL string
+
+		if err := rows.Scan(&pageID, &URL); err != nil {
+			log.Println("Can't read data from DB. Error: ", err)
+		}
+
+		pages[pageID] = URL
+	}
+
+	return pages
+}
+
 func BulkSavePagesResponse(pages []config.Page) bool {
 
 	conn := Connection()
@@ -101,8 +132,8 @@ func BulkSavePagesContent(pages []config.Page) bool {
 	for _, page := range pages {
 
 		query := fmt.Sprintf(
-			"UPDATE sitemap_pages SET title=%s, "+
-				"h1=%s, description=%s WHERE id = %d;",
+			"UPDATE sitemap_pages SET title='%s', "+
+				"h1='%s', description='%s' WHERE id = %d;",
 			page.Title, page.H1, page.Description, page.ID)
 
 		rowQuery += query

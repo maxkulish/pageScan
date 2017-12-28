@@ -49,8 +49,7 @@ func main() {
 	}
 
 	if *content == true {
-		url := "https://scoobydomyessay.com/blog/prevention-of-cyber-bullying/"
-		downloadPageContent(url, speed)
+		downloadContentUcheckedPages(speed)
 	}
 
 	log.Printf("\033[92m[+] Done! Spent %s\033[0m\n", time.Since(globalStart))
@@ -105,28 +104,36 @@ func checkResponseUncheckedPages(chunkSize int) {
 	for _, chunk := range chunks {
 		results := downloader.CheckPageResponseChunk(chunk)
 
-		for _, page := range results {
-			log.Printf("Code: %d. LoadTime: %f\tURL: %s\n", page.RespCode, page.LoadTime, page.URL)
-		}
+		//for _, page := range results {
+		//	log.Printf("Code: %d. LoadTime: %f\tURL: %s\n", page.RespCode, page.LoadTime, page.URL)
+		//}
 
 		database.BulkSavePagesResponse(results)
 	}
 }
 
-func downloadPageContent(url string, speed int) {
+func downloadContentUcheckedPages(chunkSize int) {
 
-	page, err := downloader.GetParsedHTML(url)
-	if err != nil {
-		log.Printf("I can't donwload page HTML. URL: %s", url)
+	pages := database.RetrievePagesWithoutContent()
+
+	if len(pages) == 0 {
+		log.Println("There are no pages to check")
+		os.Exit(1)
 	}
 
-	title := downloader.ExtractTitle(page)
-	fmt.Println(title)
+	pagesToCheck := database.PagesToStruct(pages)
 
-	h1 := downloader.ExtractHeaderOne(page)
-	fmt.Println(h1)
+	chunks := utils.ChunkifyPages(pagesToCheck, chunkSize)
 
-	descr := downloader.ExtractDescription(page)
-	fmt.Println(descr)
+	for _, chunk := range chunks {
+
+		results := downloader.DownloadPageContentChunk(chunk)
+
+		//for _, page := range results {
+		//	log.Printf("URL: %s\nTitle: %s. H1: %s\nDescription: %s\n", page.URL, page.Title, page.H1, page.Description)
+		//}
+
+		database.BulkSavePagesContent(results)
+	}
 
 }
