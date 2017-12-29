@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"log"
-	"time"
 
 	"github.com/maxkulish/pageScan/config"
 	"github.com/yhat/scrape"
@@ -80,14 +79,11 @@ func DownloadPageContent(page config.Page, ch chan config.Page, chFinished chan 
 		chFinished <- true
 	}()
 
-	start := time.Now()
 	htmlBody, err := GetParsedHTML(page.URL)
 	if err != nil {
 		log.Printf("I can't donwload page HTML. URL: %s", page.URL)
 		chFinished <- true
 	}
-	duration := time.Since(start)
-	page.LoadTime = duration.Seconds()
 
 	page.Title = ExtractTitle(htmlBody)
 	page.H1 = ExtractHeaderOne(htmlBody)

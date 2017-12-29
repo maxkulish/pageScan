@@ -129,11 +129,11 @@ func downloadContentUcheckedPages(chunkSize int) {
 
 		results := downloader.DownloadPageContentChunk(chunk)
 
-		//for _, page := range results {
-		//	log.Printf("URL: %s\nTitle: %s. H1: %s\nDescription: %s\n", page.URL, page.Title, page.H1, page.Description)
-		//}
+		for _, page := range results {
+			log.Printf("URL: %s\nTitle: %s. H1: %s\nDescription: %s\n", page.URL, page.Title, page.H1, page.Description)
+		}
 
-		database.BulkSavePagesContent(results)
+		database.BulkUpdatePagesContent(results)
 	}
 
 }

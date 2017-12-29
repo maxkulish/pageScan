@@ -2,10 +2,9 @@ package database
 
 import (
 	"fmt"
-	"log"
-	"time"
-
 	"github.com/maxkulish/pageScan/config"
+	log "gopkg.in/inconshreveable/log15.v2"
+	"time"
 )
 
 func RetrieveSitemapPages(sitemap_id int) map[int]string {
@@ -18,7 +17,7 @@ func RetrieveSitemapPages(sitemap_id int) map[int]string {
 			FROM sitemap_pages
 			WHERE sitemap_link_id=$1`, sitemap_id)
 	if err != nil {
-		log.Fatalf("Error: %s", err)
+		log.Crit("Error: %s", err)
 	}
 
 	pages := make(map[int]string)
@@ -28,7 +27,7 @@ func RetrieveSitemapPages(sitemap_id int) map[int]string {
 		var URL string
 
 		if err := rows.Scan(&pageID, &URL); err != nil {
-			log.Println("Can't read data from DB. Error: ", err)
+			log.Info("Can't read data from DB. Error: ", err)
 		}
 
 		pages[pageID] = URL
@@ -46,7 +45,7 @@ func RetrieveUncheckedPages() map[int]string {
 			FROM sitemap_pages
 			WHERE load_time = 0.0 OR http_response = 0;`)
 	if err != nil {
-		log.Fatalf("Error: %s", err)
+		log.Crit("Error: %s", err)
 	}
 
 	pages := make(map[int]string)
@@ -56,7 +55,7 @@ func RetrieveUncheckedPages() map[int]string {
 		var URL string
 
 		if err := rows.Scan(&pageID, &URL); err != nil {
-			log.Println("Can't read data from DB. Error: ", err)
+			log.Info("Can't read data from DB. Error: ", err)
 		}
 
 		pages[pageID] = URL
@@ -75,9 +74,9 @@ func RetrievePagesWithoutContent() map[int]string {
 			FROM sitemap_pages
 			WHERE
 			title IS NULL OR h1 IS NULL
-			OR description IS NULL OR description = 'not found';`)
+			OR description IS NULL OR title = 'not found';`)
 	if err != nil {
-		log.Fatalf("Error: %s", err)
+		log.Crit("Error: %s", err)
 	}
 
 	pages := make(map[int]string)
@@ -87,7 +86,7 @@ func RetrievePagesWithoutContent() map[int]string {
 		var URL string
 
 		if err := rows.Scan(&pageID, &URL); err != nil {
-			log.Println("Can't read data from DB. Error: ", err)
+			log.Crit("Can't read data from DB. Error: ", err)
 		}
 
 		pages[pageID] = URL
@@ -121,26 +120,21 @@ func BulkSavePagesResponse(pages []config.Page) bool {
 	return true
 }
 
-func BulkSavePagesContent(pages []config.Page) bool {
+func BulkUpdatePagesContent(pages []config.Page) bool {
 
-	conn := Connection()
-	defer conn.Close()
+	poolConn := PoolConnection()
 
-	rowQuery := ""
 	var idList = make([]int, 0, len(pages))
 
 	for _, page := range pages {
 
-		query := fmt.Sprintf(
-			"UPDATE sitemap_pages SET title='%s', "+
-				"h1='%s', description='%s' WHERE id = %d;",
-			page.Title, page.H1, page.Description, page.ID)
+		if _, err := poolConn.Exec("updateContent", page.Title, page.H1, page.Description, page.ID); err == nil {
+			log.Info("Updated: \tPage: %s", page.URL)
+		}
 
-		rowQuery += query
 		idList = append(idList, page.ID)
 	}
 
-	conn.Exec(rowQuery)
 	UpdatePageTime(idList)
 
 	return true
