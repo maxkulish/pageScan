@@ -2,9 +2,10 @@ package database
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/maxkulish/pageScan/config"
 	log "gopkg.in/inconshreveable/log15.v2"
-	"time"
 )
 
 func RetrieveSitemapPages(sitemap_id int) map[int]string {
@@ -16,6 +17,33 @@ func RetrieveSitemapPages(sitemap_id int) map[int]string {
 		`SELECT id, page_url
 			FROM sitemap_pages
 			WHERE sitemap_link_id=$1`, sitemap_id)
+	if err != nil {
+		log.Crit("Error: %s", err)
+	}
+
+	pages := make(map[int]string)
+
+	for rows.Next() {
+		var pageID int
+		var URL string
+
+		if err := rows.Scan(&pageID, &URL); err != nil {
+			log.Info("Can't read data from DB. Error: ", err)
+		}
+
+		pages[pageID] = URL
+	}
+
+	return pages
+}
+
+func RetrieveAllPages() map[int]string {
+	conn := Connection()
+	defer conn.Close()
+
+	rows, err := conn.Query(`
+		SELECT id, page_url
+			FROM sitemap_pages;`)
 	if err != nil {
 		log.Crit("Error: %s", err)
 	}
@@ -123,13 +151,14 @@ func BulkSavePagesResponse(pages []config.Page) bool {
 func BulkUpdatePagesContent(pages []config.Page) bool {
 
 	poolConn := PoolConnection()
+	defer poolConn.Close()
 
 	var idList = make([]int, 0, len(pages))
 
 	for _, page := range pages {
 
-		if _, err := poolConn.Exec("updateContent", page.Title, page.H1, page.Description, page.ID); err == nil {
-			log.Info("Updated: \tPage: %s", page.URL)
+		if _, err := poolConn.Exec("updateContent", page.Title, page.H1, page.Description, page.ID); err != nil {
+			log.Error("Can't update page: %s", page.URL)
 		}
 
 		idList = append(idList, page.ID)

@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/jackc/pgx"
-	"github.com/jackc/pgx/log/log15adapter"
 	log "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -29,12 +28,12 @@ func Connection() *pgx.Conn {
 
 func PoolConnection() *pgx.ConnPool {
 
-	logger := log15adapter.NewLogger(log.New("module", "pgx"))
+	//logger := log15adapter.NewLogger(log.New("module", "pgx"))
 
 	var err error
 
 	config, err := pgx.ParseConnectionString(os.Getenv("DATABASE_URI"))
-	config.Logger = logger
+	//config.Logger = logger
 
 	connPoolConfig := pgx.ConnPoolConfig{
 		ConnConfig:     config,

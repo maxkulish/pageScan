@@ -18,7 +18,3 @@ build_linux:
 build:
 	make build_mac
 	make build_linux
-
-
-
-
